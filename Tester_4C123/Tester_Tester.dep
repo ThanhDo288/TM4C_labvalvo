@@ -1,0 +1,8 @@
+Dependencies for Project 'Tester', Target 'Tester': (DO NOT MODIFY !)
+CompilerVersion: 5060960::V5.06 update 7 (build 960)::.\ARMCC
+F (.\startup.s)(0x50698CF0)()
+F (.\ADCSWTrigger.c)(0x523186B0)()
+F (.\PLL.c)(0x523186B0)()
+F (.\Tester.c)(0x577CC3C6)()
+F (.\Timer0.c)(0x523186B0)()
+F (.\UART2.c)(0x523186B0)()

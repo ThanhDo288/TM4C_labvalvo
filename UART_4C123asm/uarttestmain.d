@@ -1,0 +1,1 @@
+.\uarttestmain.o: UARTTestMain.s

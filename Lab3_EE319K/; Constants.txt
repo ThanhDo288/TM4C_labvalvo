@@ -1,0 +1,141 @@
+; Constants
+CHANGE_CYCLE_UNIT_DEFAULT	EQU	50     ; Đơn vị chu kỳ mặc định
+CHANGE_DUTYCYCLE_INCREMENT	EQU	20     ; Số phần trăm tăng duty cycle
+
+		IMPORT	TExaS_Init
+		THUMB
+		AREA    DATA, ALIGN=2
+
+; Các biến toàn cục
+CHANGE_cycle_unit	Space	4         ; Đơn vị chu kỳ
+CHANGE_dutycycle_ratio	Space	4    ; Tỷ lệ duty cycle
+
+        AREA    |.text|, CODE, READONLY, ALIGN=3
+        THUMB
+        EXPORT	Start
+
+; Hàm bắt đầu
+Start
+    ; Khởi tạo TExaS
+    MOV     R0, #2
+    BL      TExaS_Init
+
+    ; Khởi tạo biến toàn cục
+    BL      VARIABLE_init
+
+loop
+    ; Bật đèn LED với duty cycle hiện tại
+    BL      LED_on
+    BL      CHANGE_get_dutycycle
+    BL      delay_ms
+
+    ; Tắt đèn LED
+    BL      LED_off
+    BL      CHANGE_get_idlecycle
+    BL      delay_ms
+
+    B       loop
+
+; Hàm khởi tạo biến toàn cục
+VARIABLE_init
+    LDR     R1, =CHANGE_cycle_unit
+    LDR     R0, [R1]
+    MOV     R0, #CHANGE_CYCLE_UNIT_DEFAULT
+    STR     R0, [R1]
+
+    LDR     R1, =CHANGE_dutycycle_ratio
+    LDR     R0, [R1]
+    MOV     R0, #30                 ; Đặt duty cycle ban đầu là 30%
+    STR     R0, [R1]
+
+    BX      LR
+
+; Hàm tăng duty cycle
+CHANGE_handle_event
+    PUSH    {LR}
+    LDR     R1, =CHANGE_dutycycle_ratio
+    LDR     R0, [R1]
+    ADD     R0, R0, #CHANGE_DUTYCYCLE_INCREMENT
+    CMP     R0, #100                ; Nếu vượt quá 100%, quay lại 0%
+    BHI     CHANGE_reset_ratio
+    STR     R0, [R1]
+    POP     {LR}
+    BX      LR
+
+CHANGE_reset_ratio
+    MOV     R0, #0
+    STR     R0, [R1]
+    POP     {LR}
+    BX      LR
+
+; Hàm lấy duty cycle
+CHANGE_get_dutycycle
+    LDR     R0, =CHANGE_cycle_unit
+    LDR     R0, [R0]
+    LDR     R1, =CHANGE_dutycycle_ratio
+    LDR     R1, [R1]
+    BL      get_dutycycle
+    BX      LR
+
+; Hàm lấy chu kỳ không hoạt động
+CHANGE_get_idlecycle
+    LDR     R0, =CHANGE_cycle_unit
+    LDR     R0, [R0]
+    LDR     R1, =CHANGE_dutycycle_ratio
+    LDR     R1, [R1]
+    BL      get_idlecycle
+    BX      LR
+
+; Hàm bật đèn LED
+LED_on
+    ; Thực hiện bật đèn LED ở đây (sử dụng GPIO_LED_DATA_R)
+    ; ...
+
+    BX      LR
+
+; Hàm tắt đèn LED
+LED_off
+    ; Thực hiện tắt đèn LED ở đây (sử dụng GPIO_LED_DATA_R)
+    ; ...
+
+    BX      LR
+
+; Hàm tính toán độ dài chu kỳ nhiệm vụ dựa trên đơn vị chu kỳ và tỷ lệ
+get_dutycycle
+    MUL     R0, R0, R1
+    BX      LR
+
+; Hàm tính toán độ lớn của chu kỳ không hoạt động dựa trên đơn vị chu kỳ và tỷ lệ
+get_idlecycle
+    MOV     R2, #10
+    SUBS    R1, R2, R1
+    MUL     R0, R0, R1
+    BX      LR
+
+; Hàm delay mili giây
+delay_ms
+    CMP     R0, #0                  ; Nếu R0 = 0, thoát
+    BEQ     delay_ms_endloop
+    PUSH    {R4, LR}
+    MOV     R4, #10000
+    MUL     R0, R0, R4              ; R4 = R0 * 10000
+delay_ms_loop
+    SUBS    R0, R0, #1
+    BL      delay_100ns
+    BNE     delay_ms_loop
+    POP     {R4, LR}
+    BX      LR
+
+delay_ms_endloop
+
+; Hàm delay 100ns (nano giây)
+delay_100ns
+    NOP
+    NOP
+    NOP
+    NOP
+    SUBS    R0, R0, #1
+    BNE     delay_100ns
+    BX      LR
+
+    END
